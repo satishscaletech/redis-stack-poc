@@ -44,7 +44,10 @@ export class NewsService {
 
   public async storeCategories() {
     const readStream = fs
-      .createReadStream('', 'utf-8')
+      .createReadStream(
+        '/home/scaletech-sm/Downloads/matflix_categories.json',
+        'utf-8',
+      )
       .pipe(StreamArray.withParser());
 
     let count = 1;
@@ -70,7 +73,10 @@ export class NewsService {
 
   public async storeNewsCategories() {
     const readStream = fs
-      .createReadStream('', 'utf-8')
+      .createReadStream(
+        '/home/scaletech-sm/Downloads/matflix_news_categories.json',
+        'utf-8',
+      )
       .pipe(StreamArray.withParser());
 
     readStream.on('data', async (chunk) => {
@@ -80,19 +86,24 @@ export class NewsService {
       newsCategories.kategorie_id = newsCategories.kategorie_id ?? '';
       newsCategories.sicherungszeit = newsCategories.sicherungszeit ?? '';
 
-      const res = await redis.store(`newsCategoriesMatflix10:${newsCategories.id}`, newsCategories);
+      const res = await redis.store(
+        `newsCategoriesMatflix10:${newsCategories.id}`,
+        newsCategories,
+      );
       console.log('Redis res', res);
     });
 
     readStream.on('end', async () => {
       console.info('finished reading');
     });
-
   }
 
   public async storeGroup() {
     const readStream = fs
-      .createReadStream('', 'utf-8')
+      .createReadStream(
+        '/home/scaletech-sm/Downloads/matflix_group.json',
+        'utf-8',
+      )
       .pipe(StreamArray.withParser());
 
     readStream.on('data', async (chunk) => {
@@ -111,7 +122,10 @@ export class NewsService {
       group.is_active = group.is_active ?? '';
       group.is_inactive = group.is_inactive ?? '';
 
-      const res = await redis.store(`groupMatflix10:${group.gruppen_id}`, group);
+      const res = await redis.store(
+        `groupMatflix10:${group.gruppen_id}`,
+        group,
+      );
       console.log('Redis res', res);
     });
 
