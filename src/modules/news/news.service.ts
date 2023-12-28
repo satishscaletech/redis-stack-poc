@@ -68,12 +68,52 @@ export class NewsService {
     });
   }
 
+  public async storeNewsCategories() {
+    const readStream = fs
+      .createReadStream('', 'utf-8')
+      .pipe(StreamArray.withParser());
+
+    readStream.on('data', async (chunk) => {
+      const newsCategories = chunk.value;
+
+      newsCategories.id = newsCategories.id ?? '';
+      newsCategories.kategorie_id = newsCategories.kategorie_id ?? '';
+      newsCategories.sicherungszeit = newsCategories.sicherungszeit ?? '';
+
+      const res = await redis.store(`newsCategoriesMatflix10:${newsCategories.id}`, newsCategories);
+      console.log('Redis res', res);
+    });
+
+    readStream.on('end', async () => {
+      console.info('finished reading');
+    });
+
+  }
+
   public async storeGroup() {
     const readStream = fs
       .createReadStream('', 'utf-8')
-      .pipe(StreamArray.withParser);
+      .pipe(StreamArray.withParser());
 
-    readStream.on('data', async () => {});
+    readStream.on('data', async (chunk) => {
+      const group = chunk.value;
+
+      group.gruppen_id = group.gruppen_id ?? '';
+      group.eltern_id = group.eltern_id ?? '';
+      group.gruppe = group.gruppe ?? '';
+      group.gruppe_eng = group.gruppe_eng ?? '';
+      group.sortidx = group.sortidx ?? '';
+      group.sichtbar = group.sichtbar ?? '';
+      group.bilddatei = group.bilddatei ?? '';
+      group.filter_nachrichten = group.filter_nachrichten ?? '';
+      group.filter_kurse = group.filter_kurse ?? '';
+      group.sicherungszeit = group.sicherungszeit ?? '';
+      group.is_active = group.is_active ?? '';
+      group.is_inactive = group.is_inactive ?? '';
+
+      const res = await redis.store(`groupMatflix10:${group.gruppen_id}`, group);
+      console.log('Redis res', res);
+    });
 
     readStream.on('end', async () => {
       console.info('finished reading');

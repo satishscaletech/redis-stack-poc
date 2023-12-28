@@ -17,6 +17,12 @@ export class NewsController {
     return data;
   }
 
+  @Post('news-categories')
+  async storeNewsCategories() {
+    const data = await this.newsService.storeNewsCategories();
+    return data;
+  }
+
   @Post('group')
   async storeGroup() {
     const data = await this.newsService.storeGroup();
