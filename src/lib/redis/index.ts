@@ -268,7 +268,7 @@ class Redis {
         AS: 'fid',
       },
       '$.grusel': {
-        type: SchemaFieldTypes.TEXT,
+        type: SchemaFieldTypes.TAG,
         AS: 'grusel',
       },
       '$.sichtbar': {
@@ -299,7 +299,7 @@ class Redis {
         schema,
         {
           ON: 'JSON',
-          PREFIX: `${REDIS_MATFLIX_INDEX.CATEGORIES_MATFLIX};`,
+          PREFIX: `${REDIS_MATFLIX_INDEX.CATEGORIES_MATFLIX}:`,
         },
       );
     } catch (e) {
@@ -322,7 +322,7 @@ class Redis {
   }
 
   async get(idxKey: string, query: string, option: any) {
-    console.log('idxKey', idxKey, 'query', option);
+    // console.log('idxKey', idxKey, 'query', option);
 
     return await this.client.ft.search(idxKey, query, option);
   }
