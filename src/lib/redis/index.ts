@@ -4,7 +4,7 @@ import {
   SchemaFieldTypes,
   RediSearchSchema,
 } from 'redis';
-
+import { REDIS_MATFLIX_INDEX } from 'src/constant';
 class Redis {
   private client: RedisClientType;
 
@@ -23,6 +23,7 @@ class Redis {
         await this.createNewsSchema();
         await this.createNewsCategoriesSchema();
         await this.createGroupSchema();
+        await this.createCategoriesSchema();
       });
     } catch (err) {
       console.log('Redis error =====>', err);
@@ -50,7 +51,7 @@ class Redis {
         AS: 'source_code',
       },
       '$.grusel': {
-        type: SchemaFieldTypes.TEXT,
+        type: SchemaFieldTypes.TAG,
         AS: 'grusel',
       },
       '$.bild': {
@@ -99,13 +100,19 @@ class Redis {
     console.log(schema);
 
     try {
-      await this.client.ft.create('idx:newsMatflix10', schema, {
-        ON: 'JSON',
-        PREFIX: 'newsMatflix10:',
-      });
+      await this.client.ft.create(
+        `idx:${REDIS_MATFLIX_INDEX.NEWS_MATFLIX}`,
+        schema,
+        {
+          ON: 'JSON',
+          PREFIX: `${REDIS_MATFLIX_INDEX.NEWS_MATFLIX}:`,
+        },
+      );
     } catch (e) {
       if (e.message === 'Index already exists') {
-        console.log('Index exists already, skipped creation: newsMatflix10');
+        console.log(
+          `Index exists already, skipped creation:${REDIS_MATFLIX_INDEX.NEWS_MATFLIX} `,
+        );
       } else {
         // Something went wrong, perhaps RediSearch isn't installed...
         console.error(e);
@@ -133,14 +140,18 @@ class Redis {
     };
 
     try {
-      await this.client.ft.create('idx:newsCategoriesMatflix10', schema, {
-        ON: 'JSON',
-        PREFIX: 'newsCategoriesMatflix10:',
-      });
+      await this.client.ft.create(
+        `idx:${REDIS_MATFLIX_INDEX.NEWS_CATEGORIES_MATFLIX}`,
+        schema,
+        {
+          ON: 'JSON',
+          PREFIX: `${REDIS_MATFLIX_INDEX.NEWS_CATEGORIES_MATFLIX}:`,
+        },
+      );
     } catch (e) {
       if (e.message === 'Index already exists') {
         console.log(
-          'Index exists already, skipped creation for: newsCategoriesMatflix10',
+          `Index exists already, skipped creation for: ${REDIS_MATFLIX_INDEX.NEWS_CATEGORIES_MATFLIX}`,
         );
       } else {
         // Something went wrong, perhaps RediSearch isn't installed...
@@ -205,14 +216,18 @@ class Redis {
     };
 
     try {
-      await this.client.ft.create('idx:newsgroupMatflix10', schema, {
-        ON: 'JSON',
-        PREFIX: 'newsgroupMatflix10:',
-      });
+      await this.client.ft.create(
+        `idx:${REDIS_MATFLIX_INDEX.GROUP_MATFLIX}`,
+        schema,
+        {
+          ON: 'JSON',
+          PREFIX: `${REDIS_MATFLIX_INDEX.GROUP_MATFLIX}:`,
+        },
+      );
     } catch (e) {
       if (e.message === 'Index already exists') {
         console.log(
-          'Index exists already, skipped creation for: newsgroupMatflix10',
+          `Index exists already, skipped creation for:${REDIS_MATFLIX_INDEX.GROUP_MATFLIX} `,
         );
       } else {
         // Something went wrong, perhaps RediSearch isn't installed...
@@ -279,14 +294,18 @@ class Redis {
     };
 
     try {
-      await this.client.ft.create('idx:CategoriesMatflix10', schema, {
-        ON: 'JSON',
-        PREFIX: 'CategoriesMatflix10:',
-      });
+      await this.client.ft.create(
+        `idx:${REDIS_MATFLIX_INDEX.CATEGORIES_MATFLIX}`,
+        schema,
+        {
+          ON: 'JSON',
+          PREFIX: `${REDIS_MATFLIX_INDEX.CATEGORIES_MATFLIX};`,
+        },
+      );
     } catch (e) {
       if (e.message === 'Index already exists') {
         console.log(
-          'Index exists already, skipped creation for: CategoriesMatflix10',
+          `Index exists already, skipped creation for:  ${REDIS_MATFLIX_INDEX.CATEGORIES_MATFLIX}`,
         );
       } else {
         // Something went wrong, perhaps RediSearch isn't installed...
@@ -303,7 +322,7 @@ class Redis {
   }
 
   async get(idxKey: string, query: string, option: any) {
-    console.log('idxKey', idxKey, 'query', query);
+    console.log('idxKey', idxKey, 'query', option);
 
     return await this.client.ft.search(idxKey, query, option);
   }

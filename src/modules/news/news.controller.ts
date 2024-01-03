@@ -1,5 +1,8 @@
-import { Controller, Get, Post, Query } from '@nestjs/common';
+import { Controller, Get, Post, Query, UseInterceptors } from '@nestjs/common';
+import { TransformInterceptor, SuccessResponse } from 'src/helper/transform';
 import { NewsService } from './news.service';
+import { PaginationInterface, createPagination } from 'src/helper';
+import { newsResponseDto } from './dto/news.res.dto';
 
 @Controller('news')
 export class NewsController {
@@ -32,6 +35,31 @@ export class NewsController {
   @Get()
   async getNews(@Query() query: any) {
     const data = await this.newsService.getNews(query);
+    return data;
+  }
+
+  @Get('categories')
+  async getCategories(@Query() query: any) {
+    const data = await this.newsService.getCategories(query);
+    return data;
+  }
+
+  @Get('news-categories')
+  async getNewsCategories(@Query() query: any) {
+    const data = await this.newsService.getNewsCategories(query);
+    return data;
+  }
+
+  @Get('group')
+  async getGroup(@Query() query: any) {
+    const data = await this.newsService.getGroup(query);
+    return data;
+  }
+
+  @Get('news-group')
+  //@UseInterceptors(TransformInterceptor)
+  async getNewsByGroup(@Query() query: any) {
+    const data = await this.newsService.getNewsByGroup(query);
     return data;
   }
 }
