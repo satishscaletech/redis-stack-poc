@@ -200,8 +200,6 @@ export class NewsService {
   }
 
   public async getAllCategoriesByQuery(req: any) {
-    console.log('req.query', req.query);
-
     const cat_res = await redis.get(
       'idx:' + REDIS_MATFLIX_INDEX.CATEGORIES_MATFLIX,
       req.query,
@@ -388,14 +386,25 @@ export class NewsService {
     const categories = await this.getAllCategoriesByQuery({
       query: category_query.join(' | '),
     });
-    // ('(@grusel: {ESTHA} @grusel: {ESMCO}) | (@grusel: {ESMST} @grusel: {ESTNE})');
+
     const grusel_query = categories.map(
       (category: { kategorie_id: number; grusel: [] }) => {
-        const tag_query = category.grusel.map((tags) => {
-          return `@grusel: {${tags}}`;
-        });
+        if (category.grusel.length < 3) {
+          const tagQuery = category.grusel.map((tags) => {
+            return `@grusel: {${tags}}`;
+          });
+          return `(${tagQuery.join(' ')})`;
+        } else {
+          const results = this.pairCombination(category.grusel);
+          const tag_query = results.map((result: any) => {
+            const result_query = result.map((tag) => {
+              return `@grusel: {${tag}}`;
+            });
 
-        return `(${tag_query.join(' ')})`;
+            return `(${result_query.join(' ')})`;
+          });
+          return `(${tag_query.join('|')})`;
+        }
       },
     );
 
@@ -408,8 +417,11 @@ export class NewsService {
       const cat_data = [];
 
       const newsObj: any = news.value;
+
+      const gruselFilter = newsObj.grusel.filter((tag) => tag);
+
       const news_cat: any = await this.getAllCategoriesByQuery({
-        query: `@grusel: {${newsObj.grusel.flat().join(' | ')}}`,
+        query: `@grusel: {${gruselFilter.flat().join(' | ')}}`,
       });
 
       for (const categories of news_cat) {
@@ -448,5 +460,27 @@ export class NewsService {
     }
 
     return groupRes;
+  }
+
+  public pairCombination(data) {
+    const result = [];
+
+    // Generate pairs
+    for (let i = 2; i <= data.length; i++) {
+      const pairs = this.combination(data, i);
+      result.push(...pairs);
+    }
+
+    return result;
+  }
+
+  public combination(data, length, prefix = []) {
+    if (length === 0) {
+      return [prefix];
+    }
+
+    return data.flatMap((v, i) =>
+      this.combination(data.slice(i + 1), length - 1, [...prefix, v]),
+    );
   }
 }
