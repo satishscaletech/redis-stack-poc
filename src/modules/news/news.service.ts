@@ -375,7 +375,7 @@ export class NewsService {
     const option: any = {
       LIMIT: {
         from: offset ? offset : 0,
-        size: limit ? limit : 9,
+        size: 100,
       },
     };
     //(@grusel: MSDESTP @grusel: MSKPUR)|(@grusel: ESMOL)|(@grusel: ESTHA)|(@grusel: ESTMA)
@@ -392,7 +392,7 @@ export class NewsService {
     return groups;
   }
 
-  public async getNewsByGrusel(dto: { grusel: []; kategorie_id: string[] }) {
+  public async getNewsByGrusel(dto: { kategorie_id: string[] }) {
     const category_query = dto.kategorie_id.map((id) => {
       return `(@kategorie_id: [${id} ${id}])`;
     });
@@ -410,13 +410,23 @@ export class NewsService {
       },
     );
 
+    const grusel = categories.map(
+      (category: { kategorie_id: number; grusel: [] }) => {
+        const tagArr = category.grusel.map((tags) => {
+          return tags;
+        });
+
+        return tagArr;
+      },
+    );
+
     const news_gruesel_query = grusel_query.join('|');
 
     const news = await this.newsByGrusel({ query: news_gruesel_query });
 
     for (const news1 of news.documents) {
       const news_cat: any = await this.getAllCategoriesByQuery({
-        query: `@grusel: {${dto.grusel.join(' | ')}}`,
+        query: `@grusel: {${grusel.flat().join(' | ')}}`,
       });
       // const news_cat = await this.getNewsCategories2({
       //   query: `@grusel: {ESTHA} @grusel: {ESMCO}`,
