@@ -2,62 +2,52 @@ import { Injectable } from '@nestjs/common';
 import * as fs from 'fs';
 import redis from '../../lib/redis';
 import * as StreamArray from 'stream-json/streamers/StreamArray';
-import { getPaginateOffset } from 'src/helper';
-import { REDIS_MATFLIX_INDEX } from 'src/constant';
+import { getPaginateOffset } from '../../helper';
+import { JSON_FILE_PATH, REDIS_MATFLIX_INDEX } from '../../constant';
 import { newsResponseDto } from './dto/news.res.dto';
-// const StreamArray = require('stream-json/streamers/StreamArray');
 
 @Injectable()
 export class NewsService {
   public async storeNews() {
     const readStream = await fs
-      .createReadStream(
-        '/home/scaletech-sm/Downloads/newsMatflix101.json',
-        'utf-8',
-      )
+      .createReadStream(JSON_FILE_PATH.NEWS_MATFLIX, 'utf-8')
       .pipe(StreamArray.withParser());
 
     readStream.on('data', async function (chunk) {
       const news = chunk.value;
 
       if (news.grusel) {
-        console.log('news.grusel', news.grusel);
-
         news.id = news.id;
-        news.datum = news.datum ?? '';
-        news.sprache = news.sprache ?? '';
-        news.source_code = news.source_code ?? '';
-        news.grusel = news.grusel ? news.grusel.split(' ') : [''];
-        news.bild = news.bild ?? '';
-        news.bild_info = news.bild_info ?? '';
-        news.titel = news.titel ?? '';
-        news.einleitung = news.einleitung ?? '';
-        news.inhalt = news.inhalt ?? '';
-        news.html = news.html ?? 0;
-        news.autor = news.auto ?? '';
-        news.quelle = news.quelle ?? '';
-        news.externe_id = news.externe_id ?? 0;
-        news.sicherungszeit = news.sicherungszeit ?? '';
+        news.datum = news.datum ? new Date(news.datum).getTime() : null;
+        news.sprache = news.sprache ?? null;
+        news.source_code = news.source_code ?? null;
+        news.grusel = news.grusel ? news.grusel.split(' ') : [null];
+        news.bild = news.bild ?? null;
+        news.bild_info = news.bild_info ?? null;
+        news.titel = news.titel ?? null;
+        news.einleitung = news.einleitung ?? null;
+        news.inhalt = news.inhalt ?? null;
+        news.html = news.html ?? null;
+        news.autor = news.auto ?? null;
+        news.quelle = news.quelle ?? null;
+        news.externe_id = news.externe_id;
+        news.sicherungszeit = news.sicherungszeit ?? null;
         const res = await redis.store(
           `${REDIS_MATFLIX_INDEX.NEWS_MATFLIX}:${news.id}`,
           news,
         );
-        console.log('Redis res', res);
+        console.info('Redis news response: ', res);
       }
     });
 
     readStream.on('end', function () {
-      console.log('finished reading');
-      // write to file here.
+      console.log('finished reading news');
     });
   }
 
   public async storeCategories() {
     const readStream = fs
-      .createReadStream(
-        '/home/scaletech-sm/Downloads/categoriesMatflix101.json',
-        'utf-8',
-      )
+      .createReadStream(JSON_FILE_PATH.CATEGORIES_MATFLIX, 'utf-8')
       .pipe(StreamArray.withParser());
     readStream.on('data', async (chunk) => {
       const categories = chunk.value;
@@ -72,7 +62,6 @@ export class NewsService {
       categories.grusel = categories.grusel
         ? categories.grusel.split(' ')
         : [''];
-      // categories.grusel = categories.grusel ?? '';
       categories.sichtbar = categories.sichtbar ?? 0;
       categories.sicherungszeit = categories.sicherungszeit ?? '';
       categories.kategorie_eng = categories.kategorie_eng ?? '';
@@ -83,20 +72,17 @@ export class NewsService {
         `${REDIS_MATFLIX_INDEX.CATEGORIES_MATFLIX}:${chunk.key + 1}`,
         categories,
       );
-      console.log('Redis res', res);
+      console.log('Redis categories response: ', res);
     });
 
     readStream.on('end', async () => {
-      console.log('finished reading');
+      console.log('finished reading categories');
     });
   }
 
   public async storeNewsCategories() {
     const readStream = fs
-      .createReadStream(
-        '/home/nishaltaylor/Downloads/nachrichten_x_kategorien_202312271444.json',
-        'utf-8',
-      )
+      .createReadStream(JSON_FILE_PATH.NEWS_CATEGORIES_MATFLIX, 'utf-8')
       .pipe(StreamArray.withParser());
 
     readStream.on('data', async (chunk) => {
@@ -107,23 +93,20 @@ export class NewsService {
       newsCategories.sicherungszeit = newsCategories.sicherungszeit ?? '';
 
       const res = await redis.store(
-        `newsCategoriesMatflix11:${newsCategories.id}`,
+        `${REDIS_MATFLIX_INDEX.NEWS_CATEGORIES_MATFLIX}:${newsCategories.id}`,
         newsCategories,
       );
-      // console.log('Redis res', res);
+      console.log('Redis res', res);
     });
 
     readStream.on('end', async () => {
-      console.info('finished reading');
+      console.info('finished reading news categories');
     });
   }
 
   public async storeGroup() {
     const readStream = fs
-      .createReadStream(
-        '/home/scaletech-sm/Downloads/matflix_group.json',
-        'utf-8',
-      )
+      .createReadStream(JSON_FILE_PATH.GROUP_MATFLIX, 'utf-8')
       .pipe(StreamArray.withParser());
 
     readStream.on('data', async (chunk) => {
@@ -146,11 +129,11 @@ export class NewsService {
         `${REDIS_MATFLIX_INDEX.GROUP_MATFLIX}:${group.gruppen_id}`,
         group,
       );
-      console.log('Redis res', res);
+      console.log('Redis group response: ', res);
     });
 
     readStream.on('end', async () => {
-      console.info('finished reading');
+      console.info('finished reading group');
     });
   }
 
@@ -217,6 +200,8 @@ export class NewsService {
   }
 
   public async getAllCategoriesByQuery(req: any) {
+    console.log('req.query', req.query);
+
     const cat_res = await redis.get(
       'idx:' + REDIS_MATFLIX_INDEX.CATEGORIES_MATFLIX,
       req.query,
@@ -370,29 +355,33 @@ export class NewsService {
     return allGroups;
   }
 
-  public async newsByGrusel(dto: any) {
+  public async getNewsByQuery(dto: any) {
     const { limit, offset } = getPaginateOffset(dto.page, dto.recordPerPage);
     const option: any = {
       LIMIT: {
-        from: offset ? offset : 0,
-        size: 100,
+        from: offset,
+        size: limit,
+      },
+      SORTBY: {
+        BY: 'datum',
+        DIRECTION: 'DESC',
       },
     };
-    //(@grusel: MSDESTP @grusel: MSKPUR)|(@grusel: ESMOL)|(@grusel: ESTHA)|(@grusel: ESTMA)
+
     const groups = await redis.get(
       `idx:${REDIS_MATFLIX_INDEX.NEWS_MATFLIX}`,
-      // '@grusel: {ESTHA}',
-      // '(@grusel: {ESTHA} @grusel: {ESMCO}) | (@grusel: {ESMST} @grusel: {ESTNE})',
       dto.query,
       option,
     );
 
-    // console.log('groups', groups);
-
     return groups;
   }
 
-  public async getNewsByGrusel(dto: { kategorie_id: string[] }) {
+  public async getNewsByCatId(dto: {
+    kategorie_id: string[];
+    page: number;
+    recordPerPage: number;
+  }) {
     const category_query = dto.kategorie_id.map((id) => {
       return `(@kategorie_id: [${id} ${id}])`;
     });
@@ -402,60 +391,62 @@ export class NewsService {
     // ('(@grusel: {ESTHA} @grusel: {ESMCO}) | (@grusel: {ESMST} @grusel: {ESTNE})');
     const grusel_query = categories.map(
       (category: { kategorie_id: number; grusel: [] }) => {
-        const tagQuery = category.grusel.map((tags) => {
+        const tag_query = category.grusel.map((tags) => {
           return `@grusel: {${tags}}`;
         });
 
-        return `(${tagQuery.join(' ')})`;
+        return `(${tag_query.join(' ')})`;
       },
     );
 
-    const grusel = categories.map(
-      (category: { kategorie_id: number; grusel: [] }) => {
-        const tagArr = category.grusel.map((tags) => {
-          return tags;
-        });
+    const news_data = await this.getNewsByQuery({
+      query: grusel_query.join('|'),
+      ...dto,
+    });
 
-        return tagArr;
-      },
-    );
+    for (const news of news_data.documents) {
+      const cat_data = [];
 
-    const news_gruesel_query = grusel_query.join('|');
-
-    const news = await this.newsByGrusel({ query: news_gruesel_query });
-
-    for (const news1 of news.documents) {
+      const newsObj: any = news.value;
       const news_cat: any = await this.getAllCategoriesByQuery({
-        query: `@grusel: {${grusel.flat().join(' | ')}}`,
+        query: `@grusel: {${newsObj.grusel.flat().join(' | ')}}`,
       });
-      // const news_cat = await this.getNewsCategories2({
-      //   query: `@grusel: {ESTHA} @grusel: {ESMCO}`,
-      // });
-
-      const match_cat = [];
 
       for (const categories of news_cat) {
-        if (dto.kategorie_id.includes(String(categories.kategorie_id))) {
+        const isSubSet = categories.grusel.every((tag) =>
+          newsObj.grusel.includes(tag),
+        );
+        if (isSubSet) {
           const group_id_query = `@gruppen_id: [${categories.gruppen_id} ${categories.gruppen_id}]`;
 
-          const group = await redis.get(
-            `idx:${REDIS_MATFLIX_INDEX.GROUP_MATFLIX}`,
-            group_id_query,
-            {},
-          );
+          categories.parentGroup = await this.getParentGroup(group_id_query);
 
-          const groupRes = group.documents.map((doc) => doc.value);
-
-          categories.parentGroup = groupRes;
-
-          match_cat.push(categories);
+          cat_data.push(categories);
         }
       }
-      news1.value['tags'] = match_cat;
+      news.value['tags'] = cat_data;
     }
-    const newsData1 = news.documents.map(
+    const news_res = news_data.documents.map(
       (doc) => new newsResponseDto(doc.value),
     );
-    return { data: newsData1 };
+    return { data: news_res };
+  }
+
+  public async getParentGroup(group_id_query: string) {
+    let eltern_id = null;
+    let groupRes = [];
+
+    while (eltern_id != 0) {
+      const group = await redis.get(
+        `idx:${REDIS_MATFLIX_INDEX.GROUP_MATFLIX}`,
+        group_id_query,
+        { LIMIT: { from: 0, size: 1 } },
+      );
+      groupRes = group.documents.map((doc) => doc.value);
+      eltern_id = groupRes?.[0]?.eltern_id ?? 0;
+      group_id_query = `@gruppen_id: [${groupRes?.[0]?.eltern_id} ${groupRes?.[0]?.eltern_id}]`;
+    }
+
+    return groupRes;
   }
 }

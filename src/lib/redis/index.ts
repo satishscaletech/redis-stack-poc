@@ -38,7 +38,7 @@ class Redis {
         AS: 'id',
       },
       '$.datum': {
-        type: SchemaFieldTypes.TEXT,
+        type: SchemaFieldTypes.NUMERIC,
         SORTABLE: true,
         AS: 'datum',
       },
@@ -88,7 +88,7 @@ class Redis {
         AS: 'quelle',
       },
       '$.externe_id': {
-        type: SchemaFieldTypes.NUMERIC,
+        type: SchemaFieldTypes.TEXT,
         AS: 'externe_id',
       },
       '$.sicherungszeit': {

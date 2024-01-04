@@ -63,7 +63,7 @@ export class NewsController {
   @Get('news-by-grusel')
   //@UseInterceptors(TransformInterceptor)
   async getNewsByGrusel(@Query() query: any) {
-    const data = await this.newsService.getNewsByGrusel(query);
+    const data = await this.newsService.getNewsByCatId(query);
     return data;
   }
 }
