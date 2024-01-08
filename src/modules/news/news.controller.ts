@@ -1,5 +1,8 @@
-import { Controller, Get, Post, Query } from '@nestjs/common';
+import { Controller, Get, Post, Query, UseInterceptors } from '@nestjs/common';
 import { NewsService } from './news.service';
+import { SuccessResponse, TransformInterceptor } from 'src/helper/transform';
+import { PaginationInterface } from 'src/helper';
+import { newsResponseDto } from './dto/news.res.dto';
 
 @Controller('news')
 export class NewsController {
@@ -61,9 +64,11 @@ export class NewsController {
   }
 
   @Get('news-by-grusel')
-  //@UseInterceptors(TransformInterceptor)
-  async getNewsByGrusel(@Query() query: any) {
+  @UseInterceptors(TransformInterceptor)
+  async getNewsByGrusel(
+    @Query() query: any,
+  ): Promise<SuccessResponse<PaginationInterface<newsResponseDto[]>>> {
     const data = await this.newsService.getNewsByCatId(query);
-    return data;
+    return { data };
   }
 }

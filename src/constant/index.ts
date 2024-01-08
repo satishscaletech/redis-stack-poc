@@ -1,15 +1,17 @@
 export const REDIS_MATFLIX_INDEX = {
-  GROUP_MATFLIX: 'groupMatflix101',
-  CATEGORIES_MATFLIX: 'categoriesMatflix101',
-  NEWS_MATFLIX: 'newsMatflix105Test',
-  NEWS_CATEGORIES_MATFLIX: 'newsCategoriesMatflix101',
+  GROUP_MATFLIX: 'groupMatflix1',
+  CATEGORIES_MATFLIX: 'categoriesMatflix1',
+  NEWS_MATFLIX: 'newsMatflix1',
+  NEWS_CATEGORIES_MATFLIX: 'newsCategoriesMatflix1',
 };
 
 export const JSON_FILE_PATH = {
-  GROUP_MATFLIX: '',
-  CATEGORIES_MATFLIX: '',
-  NEWS_MATFLIX: '/home/scaletech-sm/Downloads/nachrichten_202401081056.json',
-  NEWS_CATEGORIES_MATFLIX: '',
+  GROUP_MATFLIX: '/home/nishaltaylor/Downloads/gruppen_202312271444.json',
+  CATEGORIES_MATFLIX:
+    '/home/nishaltaylor/Downloads/kategorien_202312271445.json',
+  NEWS_MATFLIX: '/home/nishaltaylor/Downloads/nachrichten_202401081056.json',
+  NEWS_CATEGORIES_MATFLIX:
+    '/home/nishaltaylor/Downloads/nachrichten_x_kategorien_202312271444.json',
 };
 
 export const FREEMIUM = [

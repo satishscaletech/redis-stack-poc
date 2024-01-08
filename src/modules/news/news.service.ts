@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import { difference, intersection } from 'lodash';
 import redis from '../../lib/redis';
 import * as StreamArray from 'stream-json/streamers/StreamArray';
-import { getPaginateOffset } from '../../helper';
+import { createPagination, getPaginateOffset } from '../../helper';
 import {
   JSON_FILE_PATH,
   REDIS_MATFLIX_INDEX,
@@ -391,6 +391,10 @@ export class NewsService {
     page: number;
     recordPerPage: number;
   }) {
+    const { limit, offset, pagenumber } = getPaginateOffset(
+      dto.page,
+      dto.recordPerPage,
+    );
     const category_query = dto.kategorie_id.map((id) => {
       return `(@kategorie_id: [${id} ${id}])`;
     });
@@ -401,7 +405,7 @@ export class NewsService {
     const grusel_query = categories.map(
       (category: { kategorie_id: number; grusel: [] }) => {
         if (category.grusel.length < 3) {
-          const tagQuery = category.grusel.map((tags) => {
+          const tagQuery = category.grusel.map((tags: string) => {
             return `@grusel: {${tags}}`;
           });
           return `(${tagQuery.join(' ')})`;
@@ -423,13 +427,23 @@ export class NewsService {
       query: grusel_query.join('|'),
       ...dto,
     });
+
     // return news_data;
     for (const news of news_data.documents) {
       const cat_data = [];
 
       const newsObj: any = news.value;
 
-      const news_grusel = newsObj.grusel.filter((tag) => tag);
+      const filtered_news_grusel = newsObj.grusel.filter((tag: string) => tag);
+      const news_grusel = filtered_news_grusel.map((tag: string) => {
+        let t = [];
+        if (tag.includes('-')) {
+          t.push(tag.replace(/-/g, '\\-'));
+        } else {
+          t.push(tag);
+        }
+        return t.join('');
+      });
       const news_cat: any = await this.getAllCategoriesByQuery({
         query: `(@grusel: {${news_grusel
           .flat()
@@ -481,7 +495,8 @@ export class NewsService {
     const news_res = news_data.documents.map(
       (doc) => new newsResponseDto(doc.value),
     );
-    return { data: news_res };
+    //return { data: news_res };
+    return createPagination(news_data.total, pagenumber, limit, news_res);
   }
 
   public async getParentGroup(group_id_query: string) {
