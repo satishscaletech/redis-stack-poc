@@ -1,16 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import * as fs from 'fs';
+import { difference, intersection } from 'lodash';
 import redis from '../../lib/redis';
 import * as StreamArray from 'stream-json/streamers/StreamArray';
 import { getPaginateOffset } from '../../helper';
-import { JSON_FILE_PATH, REDIS_MATFLIX_INDEX } from '../../constant';
+import { JSON_FILE_PATH, REDIS_MATFLIX_INDEX, FREEMIUM } from '../../constant';
 import { newsResponseDto } from './dto/news.res.dto';
 
 @Injectable()
 export class NewsService {
   public async storeNews() {
     const readStream = await fs
-      .createReadStream(JSON_FILE_PATH.NEWS_MATFLIX, 'utf-8')
+      .createReadStream(`${JSON_FILE_PATH.NEWS_MATFLIX}`, 'utf-8')
       .pipe(StreamArray.withParser());
 
     readStream.on('data', async function (chunk) {
@@ -412,23 +413,40 @@ export class NewsService {
       query: grusel_query.join('|'),
       ...dto,
     });
-
+    // return news_data;
     for (const news of news_data.documents) {
       const cat_data = [];
 
       const newsObj: any = news.value;
 
-      const gruselFilter = newsObj.grusel.filter((tag) => tag);
-
+      const news_grusel = newsObj.grusel.filter((tag) => tag);
       const news_cat: any = await this.getAllCategoriesByQuery({
-        query: `@grusel: {${gruselFilter.flat().join(' | ')}}`,
+        query: `(@grusel: {${news_grusel
+          .flat()
+          .join(' | ')}}) (@is_news_delete: [0 0])`,
       });
 
       for (const categories of news_cat) {
-        const isSubSet = categories.grusel.every((tag) =>
-          newsObj.grusel.includes(tag),
-        );
-        if (isSubSet) {
+        const filtered_grusel = categories.grusel.filter((tag) => tag);
+        let grusel_pair = [];
+        let is_news_cat_grusel_match = false;
+        if (filtered_grusel.length < 3) {
+          grusel_pair = filtered_grusel;
+          const grusel_intersection = intersection(news_grusel, grusel_pair);
+          if (grusel_pair.length <= grusel_intersection.length) {
+            is_news_cat_grusel_match = true;
+          }
+        } else if (filtered_grusel.length) {
+          grusel_pair = this.pairCombination(filtered_grusel);
+          is_news_cat_grusel_match = grusel_pair.some((grusel) => {
+            const grusel_intersection = intersection(news_grusel, grusel);
+            if (grusel_intersection.length === grusel.length) {
+              return true;
+            }
+          });
+        }
+
+        if (is_news_cat_grusel_match) {
           const group_id_query = `@gruppen_id: [${categories.gruppen_id} ${categories.gruppen_id}]`;
 
           categories.parentGroup = await this.getParentGroup(group_id_query);
@@ -436,6 +454,18 @@ export class NewsService {
           cat_data.push(categories);
         }
       }
+
+      //Add freemium category if applicable
+      const freemium_cat = await this.getFreemiumCategory(news_grusel);
+
+      if (freemium_cat) {
+        const group_id_query = `@gruppen_id: [${freemium_cat.gruppen_id} ${freemium_cat.gruppen_id}]`;
+
+        freemium_cat.parentGroup = await this.getParentGroup(group_id_query);
+
+        cat_data.push(freemium_cat);
+      }
+
       news.value['tags'] = cat_data;
     }
     const news_res = news_data.documents.map(
@@ -462,7 +492,67 @@ export class NewsService {
     return groupRes;
   }
 
-  public pairCombination(data) {
+  public async getNewsCategoriesByGruse(news, categories) {
+    const filtered_grusel = news.grusel.filter((tag) => tag);
+    const grusel_arr = [];
+    let grusel_diff = [];
+    const grusel_intsec_cat_arr = [];
+    categories.forEach((category) => {
+      grusel_arr.push(category.grusel.filter((tag) => tag));
+    });
+
+    grusel_diff = difference(filtered_grusel, grusel_arr.flat());
+
+    const grusel_diff_query = grusel_diff.map((tag) => `(@grusel: {${tag}})`);
+
+    grusel_arr.forEach((grusel) => {
+      const intersection_arr = intersection(filtered_grusel, grusel);
+
+      if (intersection_arr.length) {
+        grusel_intsec_cat_arr.push(intersection_arr);
+      }
+    });
+
+    const grusel_intsec_query = grusel_intsec_cat_arr.map((grusel) => {
+      if (grusel.length < 3) {
+        const tagQuery = grusel.map((tags) => {
+          return `@grusel: {${tags}}`;
+        });
+        return `(${tagQuery.join(' ')})`;
+      } else {
+        const results = this.pairCombination(grusel);
+        const tag_query = results.map((result: any) => {
+          const result_query = result.map((tag) => {
+            return `@grusel: {${tag}}`;
+          });
+
+          return `(${result_query.join(' ')})`;
+        });
+        return `(${tag_query.join('|')})`;
+      }
+    });
+
+    grusel_intsec_query.push(...grusel_diff_query);
+
+    return grusel_intsec_query.join('|');
+  }
+
+  private async getFreemiumCategory(news_grusel: string[]) {
+    let category = null;
+    const grusel_intersection = intersection(news_grusel, FREEMIUM);
+    if (grusel_intersection.length) {
+      const news_cat: any = await this.getAllCategoriesByQuery({
+        query: `(@kategorie_id: [115 115]) (@is_news_delete: [0 0])`,
+      });
+
+      //categories = news_cat[0];
+      category = news_cat[0];
+    }
+
+    return category;
+  }
+
+  private pairCombination(data) {
     const result = [];
 
     // Generate pairs
