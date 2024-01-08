@@ -4,7 +4,12 @@ import { difference, intersection } from 'lodash';
 import redis from '../../lib/redis';
 import * as StreamArray from 'stream-json/streamers/StreamArray';
 import { getPaginateOffset } from '../../helper';
-import { JSON_FILE_PATH, REDIS_MATFLIX_INDEX, FREEMIUM } from '../../constant';
+import {
+  JSON_FILE_PATH,
+  REDIS_MATFLIX_INDEX,
+  FREEMIUM,
+  TOTAL_CATEGORY,
+} from '../../constant';
 import { newsResponseDto } from './dto/news.res.dto';
 
 @Injectable()
@@ -204,7 +209,12 @@ export class NewsService {
     const cat_res = await redis.get(
       'idx:' + REDIS_MATFLIX_INDEX.CATEGORIES_MATFLIX,
       req.query,
-      {},
+      {
+        LIMIT: {
+          from: 0,
+          size: TOTAL_CATEGORY,
+        },
+      },
     );
     return cat_res.documents.map((doc) => {
       return doc.value;

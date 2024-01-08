@@ -29,3 +29,6 @@ export const FREEMIUM = [
   'WEBVUFO',
   'WEBEURO',
 ];
+
+export const TOTAL_CATEGORY = 1000;
+export const TOTAL_GROUP = 1000;
