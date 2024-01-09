@@ -248,86 +248,34 @@ export class NewsService {
   }
 
   public async getNewsByGroup(dto: any) {
-    let newsData: any[] = [];
-    let total = 0;
     // Retrieve all groups and sub-groups
     const groups = await this.getAllGroups(dto.groupId);
-    //  console.log(groups);
     // Extract group IDs for query
     const groupIds = groups.map(
       (group) =>
         `(@gruppen_id: [${group.value.gruppen_id} ${group.value.gruppen_id}])`,
     );
 
-    const category_key = `idx:${REDIS_MATFLIX_INDEX.CATEGORIES_MATFLIX}`;
-    const group_query = groupIds.join('|');
-    const categories = await redis.get(category_key, group_query, {});
-    //console.log('group-QUERY', group_query);
-    console.log('catege', categories.documents.length);
+    const categories = await redis.get(
+      `idx:${REDIS_MATFLIX_INDEX.CATEGORIES_MATFLIX}`,
+      groupIds.join('|'),
+      { LIMIT: { from: 0, size: TOTAL_CATEGORY } },
+    );
+    const categories_ids: any[] = categories.documents.map((doc) => {
+      return doc.value.kategorie_id;
+    });
 
-    if (categories) {
-      // Extract category IDs for query
-      const categoryFieldQueries = categories.documents.map(
-        (doc) =>
-          `(@kategorie_id:[${doc.value.kategorie_id} ${doc.value.kategorie_id}])`,
-      );
-
-      // Retrieve news categories based on category IDs
-      const newsCategory_key = `idx:${REDIS_MATFLIX_INDEX.NEWS_CATEGORIES_MATFLIX}`;
-      const newsCategory_query = categoryFieldQueries.join('|');
-      const limit = 20;
-      const newsCategories = await redis.get(
-        newsCategory_key,
-        newsCategory_query,
-        { limit },
-      );
-      console.log(newsCategories.documents);
-
-      if (newsCategories) {
-        // Extract news IDs for query
-        const newsIdFieldQueries = newsCategories.documents.map(
-          (doc) => `(@id:[${doc.value.id} ${doc.value.id}])`,
-        );
-
-        // Retrieve news based on news IDs
-        const news_key = `idx:${REDIS_MATFLIX_INDEX.NEWS_MATFLIX}`;
-        const news_query = newsIdFieldQueries.join('|');
-        const news = await redis.get(news_key, news_query, {});
-        total = news.total;
-
-        for (let news1 of news.documents) {
-          const news_cat = await this.getNewsCategories1({
-            query: `@id: [${news1.value.id} ${news1.value.id}]`,
-          });
-
-          for (let categories of news_cat) {
-            const group_id_query = news_cat.map((cat) => {
-              return `@gruppen_id: [${cat.gruppen_id} ${cat.gruppen_id}]`;
-            });
-
-            const group = await redis.get(
-              `idx:${REDIS_MATFLIX_INDEX.GROUP_MATFLIX}`,
-              group_id_query.join('|'),
-              {},
-            );
-
-            const groupRes = group.documents.map((doc) => doc.value);
-            categories.parentGroup = groupRes;
-          }
-          news1.value['tags'] = news_cat;
-        }
-        newsData = news.documents.map((doc) => new newsResponseDto(doc.value));
-      }
-    }
-    return {
-      total,
-      recordPerPage: 10,
-      currentPage: 1,
-      totalPages: newsData.length,
-      data: newsData,
-      nextPage: 1,
-      remainingCount: 0,
+    const result: {
+      kategorie_id: number[];
+      page: number;
+      recordPerPage: number;
+    } = {
+      kategorie_id: categories_ids,
+      page: dto.page,
+      recordPerPage: dto.recordPerPage,
     };
+    const news = await this.getNewsByCatId(result);
+    return { data: news };
   }
 
   public async getAllGroups(groupId) {
@@ -335,7 +283,6 @@ export class NewsService {
     const group_query = `@gruppen_id: [${groupId} ${groupId}]`;
 
     const groups = await redis.get(key, group_query, { from: 1, size: 10 });
-    console.log(groups);
 
     let eltern_ids = [];
 
@@ -387,7 +334,7 @@ export class NewsService {
   }
 
   public async getNewsByCatId(dto: {
-    kategorie_id: string[];
+    kategorie_id: number[];
     page: number;
     recordPerPage: number;
   }) {
@@ -398,6 +345,7 @@ export class NewsService {
     const category_query = dto.kategorie_id.map((id) => {
       return `(@kategorie_id: [${id} ${id}])`;
     });
+    console.log('=============');
     const categories = await this.getAllCategoriesByQuery({
       query: category_query.join(' | '),
     });
