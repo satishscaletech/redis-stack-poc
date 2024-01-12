@@ -11,6 +11,7 @@ import {
   TOTAL_CATEGORY,
 } from '../../constant';
 import { newsResponseDto } from './dto/news.res.dto';
+import * as moment from 'moment';
 
 @Injectable()
 export class NewsService {
@@ -27,7 +28,7 @@ export class NewsService {
         news.datum = news.datum ? new Date(news.datum).getTime() : null;
         news.sprache = news.sprache ?? null;
         news.source_code = news.source_code ?? null;
-        news.grusel = news.grusel ? news.grusel.split(' ') : [null];
+        news.grusel = news.grusel ? news.grusel.split(' ') : null;
         news.bild = news.bild ?? null;
         news.bild_info = news.bild_info ?? null;
         news.titel = news.titel ?? null;
@@ -338,6 +339,7 @@ export class NewsService {
     page: number;
     recordPerPage: number;
   }) {
+    //console.log(dy)
     const { limit, offset, pagenumber } = getPaginateOffset(
       dto.page,
       dto.recordPerPage,
@@ -345,7 +347,6 @@ export class NewsService {
     const category_query = dto.kategorie_id.map((id) => {
       return `(@kategorie_id: [${id} ${id}])`;
     });
-    console.log('=============');
     const categories = await this.getAllCategoriesByQuery({
       query: category_query.join(' | '),
     });
@@ -357,8 +358,13 @@ export class NewsService {
             return `@grusel: {${tags}}`;
           });
           return `(${tagQuery.join(' ')})`;
-        } else {
-          const results = this.pairCombination(category.grusel);
+        } else if (category.grusel.length > 2) {
+          // const results = this.pairCombination(category.grusel);
+          const category_grusel: [] = category.grusel;
+          const new_grusel_arr = category_grusel.slice(1);
+          const results = new_grusel_arr.map((tag) => {
+            return [category_grusel.slice(0, 1)[0], tag];
+          });
           const tag_query = results.map((result: any) => {
             const result_query = result.map((tag) => {
               return `@grusel: {${tag}}`;
@@ -392,11 +398,15 @@ export class NewsService {
         }
         return t.join('');
       });
+      // console.log(news_grusel);
+
       const news_cat: any = await this.getAllCategoriesByQuery({
         query: `(@grusel: {${news_grusel
           .flat()
-          .join(' | ')}}) (@is_news_delete: [0 0])`,
+          .join(' | ')}}) (@sichtbar: [1 1]) (@is_news_delete: [0 0])`,
       });
+
+      // console.log(news_cat);
 
       for (const categories of news_cat) {
         const filtered_grusel = categories.grusel.filter((tag) => tag);
@@ -409,7 +419,11 @@ export class NewsService {
             is_news_cat_grusel_match = true;
           }
         } else if (filtered_grusel.length) {
-          grusel_pair = this.pairCombination(filtered_grusel);
+          // grusel_pair = this.pairCombination(filtered_grusel);
+          const new_grusel_arr = filtered_grusel.slice(1);
+          const grusel_pair = new_grusel_arr.map((tag) => {
+            return [filtered_grusel[0], tag];
+          });
           is_news_cat_grusel_match = grusel_pair.some((grusel) => {
             const grusel_intersection = intersection(news_grusel, grusel);
             if (grusel_intersection.length === grusel.length) {
@@ -440,9 +454,10 @@ export class NewsService {
 
       news.value['tags'] = cat_data;
     }
-    const news_res = news_data.documents.map(
-      (doc) => new newsResponseDto(doc.value),
-    );
+    const news_res = news_data.documents.map((doc: any) => {
+      doc.value.grusel = doc.value.grusel?.join(' ');
+      return new newsResponseDto(doc.value);
+    });
     //return { data: news_res };
     return createPagination(news_data.total, pagenumber, limit, news_res);
   }
@@ -545,5 +560,34 @@ export class NewsService {
     return data.flatMap((v, i) =>
       this.combination(data.slice(i + 1), length - 1, [...prefix, v]),
     );
+  }
+
+  public async getNewsBySearch(requestDto: any) {
+    console.log(requestDto);
+    const key = `idx:${REDIS_MATFLIX_INDEX.NEWS_MATFLIX}`;
+    const trimWord = requestDto.word.trim();
+    const replaceWord = trimWord.replace(/ ([^A-Za-z0-9()]+)/g, ' ');
+    const startTimestamp = moment(new Date()).subtract(3, 'months').unix();
+    const endTimestamp = moment(new Date()).add(1, 'days').unix();
+    const replaceString = replaceWord
+      .replace(/([^A-Za-z0-9()]+)/g, ' ')
+      .replace(')', '")"')
+      .replace('(', '"("')
+      .trim()
+      .replace(/ /g, ' +')
+      .replace(/'/g, "''");
+    const query = `(@inhalt: ${replaceString}) | (@titel: ${replaceString})  & (@datum: [${startTimestamp}000 ${endTimestamp}000])`;
+    console.log(query);
+
+    const data = await redis.get(key, query, {
+      LIMIT: { from: 0, size: 100 },
+      SORTBY: {
+        BY: 'datum',
+        DIRECTION: 'DESC',
+      },
+    });
+    return data.documents.map((doc) => {
+      return doc.value;
+    });
   }
 }

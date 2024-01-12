@@ -31,7 +31,7 @@ export class TransformInterceptor<T>
       map((result) => {
         return {
           isError: false,
-          message: result.message || '',
+          message: result.message || 'Successes',
           data: result.data,
         };
       }),

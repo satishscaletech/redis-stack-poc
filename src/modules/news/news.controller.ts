@@ -57,8 +57,10 @@ export class NewsController {
   }
 
   @Get('news-group')
-  //@UseInterceptors(TransformInterceptor)
-  async getNewsByGroup(@Query() query: any) {
+  @UseInterceptors(TransformInterceptor)
+  async getNewsByGroup(
+    @Query() query: any,
+  ): Promise<SuccessResponse<PaginationInterface<newsResponseDto[]>>> {
     const data = await this.newsService.getNewsByGroup(query);
     return data;
   }
@@ -70,5 +72,12 @@ export class NewsController {
   ): Promise<SuccessResponse<PaginationInterface<newsResponseDto[]>>> {
     const data = await this.newsService.getNewsByCatId(query);
     return { data };
+  }
+
+  @Get('searchByWord')
+  async getNewsBySearch(@Query() query: any) {
+    const data = await this.newsService.getNewsBySearch(query);
+    console.log(data.length);
+    return data;
   }
 }
