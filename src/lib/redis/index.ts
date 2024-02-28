@@ -4,13 +4,16 @@ import {
   SchemaFieldTypes,
   RediSearchSchema,
 } from 'redis';
+import 'dotenv/config';
 import { REDIS_MATFLIX_INDEX } from 'src/constant';
 class Redis {
   private client: RedisClientType;
 
   constructor() {
     this.client = createClient({
-      url: process.env.REDIS_URL,
+      url: 'redis://135.181.248.192:6379',
+      // url: process.env.REDIS_URL,
+      password: 'Redis@123',
     });
     this.init();
   }
@@ -65,6 +68,8 @@ class Redis {
       '$.titel': {
         type: SchemaFieldTypes.TEXT,
         AS: 'titel',
+        SORTABLE: true,
+        WEIGHT: 5.0,
       },
       '$.einleitung': {
         type: SchemaFieldTypes.TEXT,
@@ -84,7 +89,7 @@ class Redis {
       },
       '$.quelle': {
         type: SchemaFieldTypes.TEXT,
-        SORTABLE: true,
+        // SORTABLE: true,
         AS: 'quelle',
       },
       '$.externe_id': {
@@ -94,6 +99,10 @@ class Redis {
       '$.sicherungszeit': {
         type: SchemaFieldTypes.TEXT,
         AS: 'sicherungszeit',
+      },
+      '$.tags': {
+        type: SchemaFieldTypes.TEXT,
+        AS: 'tags',
       },
     };
 

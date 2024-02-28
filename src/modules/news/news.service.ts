@@ -12,6 +12,7 @@ import {
 } from '../../constant';
 import { newsResponseDto } from './dto/news.res.dto';
 import * as moment from 'moment';
+import { tagResponseDto } from './dto/tag.res.dto';
 
 @Injectable()
 export class NewsService {
@@ -20,36 +21,275 @@ export class NewsService {
       .createReadStream(`${JSON_FILE_PATH.NEWS_MATFLIX}`, 'utf-8')
       .pipe(StreamArray.withParser());
 
-    readStream.on('data', async function (chunk) {
+    readStream.on('data', async (chunk) => {
       const news = chunk.value;
-
-      if (news.grusel) {
-        news.id = news.id;
-        news.datum = news.datum ? new Date(news.datum).getTime() : null;
-        news.sprache = news.sprache ?? null;
-        news.source_code = news.source_code ?? null;
-        news.grusel = news.grusel ? news.grusel.split(' ') : null;
-        news.bild = news.bild ?? null;
-        news.bild_info = news.bild_info ?? null;
-        news.titel = news.titel ?? null;
-        news.einleitung = news.einleitung ?? null;
-        news.inhalt = news.inhalt ?? null;
-        news.html = news.html ?? null;
-        news.autor = news.auto ?? null;
-        news.quelle = news.quelle ?? null;
-        news.externe_id = news.externe_id;
-        news.sicherungszeit = news.sicherungszeit ?? null;
-        const res = await redis.store(
-          `${REDIS_MATFLIX_INDEX.NEWS_MATFLIX}:${news.id}`,
-          news,
-        );
-        console.info('Redis news response: ', res);
-      }
+      news.id = news.id;
+      news.datum = news.datum ? new Date(news.datum).getTime() : null;
+      news.sprache = news.sprache ?? null;
+      news.source_code = news.source_code ?? null;
+      news.grusel = news.grusel
+        ? news.grusel
+            .trim()
+            .split(' ')
+            .filter((d: string) => d)
+        : [];
+      //news.grusel = news.grusel;
+      news.bild = news.bild ?? null;
+      news.bild_info = news.bild_info ?? null;
+      news.titel = news.titel ?? null;
+      news.einleitung = news.einleitung ?? null;
+      news.inhalt = news.inhalt ?? null;
+      news.html = news.html ?? null;
+      news.autor = news.auto ?? null;
+      news.quelle = news.quelle ?? null;
+      news.externe_id = news.externe_id;
+      news.sicherungszeit = news.sicherungszeit ?? null;
+      news.tags =
+        news.grusel.length > 0
+          ? JSON.stringify(await this.storeTag(news.grusel))
+          : 'false';
+      news.categories =
+        news.grusel.length > 0
+          ? await this.storeCategoriesIDs(news.grusel)
+          : [];
+      const res = await redis.store(
+        `${REDIS_MATFLIX_INDEX.NEWS_MATFLIX}:${news.id}`,
+        news,
+      );
+      console.info('Redis news response: ', res);
     });
 
     readStream.on('end', function () {
       console.log('finished reading news');
     });
+  }
+
+  /* public async storeTag(grusel: string[]) {
+    try {
+      const cat_data = [];
+      let news_grusel: any;
+      if (grusel.length) {
+        news_grusel = grusel.filter(
+          (tag: string) =>
+            !tag.includes('-') &&
+            !tag.includes('#') &&
+            tag !== ' ' &&
+            tag !== '  ' &&
+            !/[^\w\s]/.test(tag) &&
+            tag,
+        );
+      }
+      if (!news_grusel.length) {
+        return false;
+      }
+      if (grusel[0] == '') {
+        return false;
+      } else {
+        const news_cat: any = await this.getAllCategoriesByQuery({
+          query: `(@grusel: {${news_grusel
+            .flat()
+            .join(' | ')}}) (@sichtbar: [1 1]) (@is_news_delete: [0 0])`,
+        });
+        for (const categories of news_cat) {
+          const filtered_grusel = categories.grusel.filter((tag: any) => tag);
+          let grusel_pair = [];
+          let is_news_cat_grusel_match = false;
+          if (filtered_grusel.length < 3) {
+            grusel_pair = filtered_grusel;
+            const grusel_intersection = intersection(news_grusel, grusel_pair);
+            if (grusel_pair.length <= grusel_intersection.length) {
+              is_news_cat_grusel_match = true;
+            }
+          } else if (filtered_grusel.length) {
+            const new_grusel_arr = filtered_grusel.slice(1);
+            const grusel_pair = new_grusel_arr.map((tag: any) => {
+              return [filtered_grusel[0], tag];
+            });
+            is_news_cat_grusel_match = grusel_pair.some((grusel: any) => {
+              const grusel_intersection = intersection(news_grusel, grusel);
+              if (grusel_intersection.length === grusel.length) {
+                return true;
+              }
+            });
+          }
+
+          if (is_news_cat_grusel_match) {
+            const group_id_query = `@gruppen_id: [${categories.gruppen_id} ${categories.gruppen_id}]`;
+
+            categories.parentGroup = await this.getParentGroup(group_id_query);
+            cat_data.push(new tagResponseDto(categories));
+          }
+        }
+
+        //Add freemium category if applicable
+        const freemium_cat = await this.getFreemiumCategory(news_grusel);
+
+        if (freemium_cat) {
+          const group_id_query = `@gruppen_id: [${freemium_cat.gruppen_id} ${freemium_cat.gruppen_id}]`;
+
+          freemium_cat.parentGroup = await this.getParentGroup(group_id_query);
+
+          cat_data.push(new tagResponseDto(freemium_cat));
+        }
+
+        if (cat_data.length) {
+          return cat_data;
+        } else {
+          return false;
+        }
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  } */
+
+  public async storeTag(grusel: string[]) {
+    try {
+      const cat_data = [];
+      let news_grusel: string[];
+      if (grusel.length) {
+        news_grusel = grusel.filter(
+          (tag: string) =>
+            !tag.includes('-') && !tag.includes('#') && !/[^\w\s]/.test(tag),
+        );
+        const news_cat: any = await this.getAllCategoriesByQuery({
+          query: `(@grusel: {${news_grusel
+            .flat()
+            .join(' | ')}}) (@sichtbar: [1 1]) (@is_news_delete: [0 0])`,
+        });
+        for (const categories of news_cat) {
+          const filtered_grusel = categories.grusel.filter((tag: any) => tag);
+          let grusel_pair = [];
+          let is_news_cat_grusel_match = false;
+          if (filtered_grusel.length < 3) {
+            grusel_pair = filtered_grusel;
+            const grusel_intersection = intersection(news_grusel, grusel_pair);
+            if (grusel_pair.length <= grusel_intersection.length) {
+              is_news_cat_grusel_match = true;
+            }
+          } else if (filtered_grusel.length) {
+            const new_grusel_arr = filtered_grusel.slice(1);
+            const grusel_pair = new_grusel_arr.map((tag: any) => {
+              return [filtered_grusel[0], tag];
+            });
+            is_news_cat_grusel_match = grusel_pair.some((grusel: any) => {
+              const grusel_intersection = intersection(news_grusel, grusel);
+              if (grusel_intersection.length === grusel.length) {
+                return true;
+              }
+            });
+          }
+
+          if (is_news_cat_grusel_match) {
+            const group_id_query = `@gruppen_id: [${categories.gruppen_id} ${categories.gruppen_id}]`;
+
+            categories.parentGroup = await this.getParentGroup(group_id_query);
+            cat_data.push(new tagResponseDto(categories));
+          }
+
+          //Add freemium category if applicable
+          const freemium_cat = await this.getFreemiumCategory(news_grusel);
+
+          if (freemium_cat) {
+            const group_id_query = `@gruppen_id: [${freemium_cat.gruppen_id} ${freemium_cat.gruppen_id}]`;
+
+            freemium_cat.parentGroup =
+              await this.getParentGroup(group_id_query);
+
+            cat_data.push(new tagResponseDto(freemium_cat));
+          }
+
+          if (cat_data.length) {
+            return cat_data;
+          } else {
+            return false;
+          }
+        }
+      } else {
+        return false;
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  public async storeCategoriesIDs(grusel) {
+    try {
+      const catIds = [];
+      let news_grusel: any;
+      if (grusel.length) {
+        news_grusel = grusel.filter(
+          (tag: string) =>
+            !tag.includes('-') &&
+            !tag.includes('#') &&
+            tag !== ' ' &&
+            tag !== '  ' &&
+            !/[^\w\s]/.test(tag) &&
+            tag,
+        );
+      }
+      if (!news_grusel.length) {
+        return [];
+      }
+      if (grusel[0] == '') {
+        return [];
+      } else {
+        const news_cat: any = await this.getAllCategoriesByQuery({
+          query: `(@grusel: {${news_grusel
+            .flat()
+            .join(' | ')}}) (@sichtbar: [1 1]) (@is_news_delete: [0 0])`,
+        });
+        for (const categories of news_cat) {
+          const filtered_grusel = categories.grusel.filter((tag: any) => tag);
+          let grusel_pair = [];
+          let is_news_cat_grusel_match = false;
+          if (filtered_grusel.length < 3) {
+            grusel_pair = filtered_grusel;
+            const grusel_intersection = intersection(news_grusel, grusel_pair);
+            if (grusel_pair.length <= grusel_intersection.length) {
+              is_news_cat_grusel_match = true;
+            }
+          } else if (filtered_grusel.length) {
+            const new_grusel_arr = filtered_grusel.slice(1);
+            const grusel_pair = new_grusel_arr.map((tag: any) => {
+              return [filtered_grusel[0], tag];
+            });
+            is_news_cat_grusel_match = grusel_pair.some((grusel: any) => {
+              const grusel_intersection = intersection(news_grusel, grusel);
+              if (grusel_intersection.length === grusel.length) {
+                return true;
+              }
+            });
+          }
+
+          if (is_news_cat_grusel_match) {
+            const group_id_query = `@gruppen_id: [${categories.gruppen_id} ${categories.gruppen_id}]`;
+
+            // categories.parentGroup = await this.getParentGroup(group_id_query);
+            console.log('categories', categories);
+            catIds.push(categories.kategorie_id);
+          }
+        }
+
+        //Add freemium category if applicable
+        const freemium_cat = await this.getFreemiumCategory(news_grusel);
+
+        if (freemium_cat) {
+          const group_id_query = `@gruppen_id: [${freemium_cat.gruppen_id} ${freemium_cat.gruppen_id}]`;
+
+          // freemium_cat.parentGroup = await this.getParentGroup(group_id_query);
+
+          catIds.push(freemium_cat.kategorie_id);
+        }
+        if (catIds.length) {
+          return catIds;
+        } else {
+          return [];
+        }
+      }
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   public async storeCategories() {

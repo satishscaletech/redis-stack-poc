@@ -1,15 +1,23 @@
+// export const REDIS_MATFLIX_INDEX = {
+//   GROUP_MATFLIX: 'groupMatflix1',
+//   CATEGORIES_MATFLIX: 'categoriesMatflix1',
+//   NEWS_MATFLIX: 'newsMatflix1',
+//   NEWS_CATEGORIES_MATFLIX: 'newsCategoriesMatflix1',
+// };
+
 export const REDIS_MATFLIX_INDEX = {
-  GROUP_MATFLIX: 'groupMatflix1',
-  CATEGORIES_MATFLIX: 'categoriesMatflix1',
-  NEWS_MATFLIX: 'newsMatflix1',
+  GROUP_MATFLIX: 'news_groups',
+  CATEGORIES_MATFLIX: 'news_categories',
+  NEWS_MATFLIX: 'news',
   NEWS_CATEGORIES_MATFLIX: 'newsCategoriesMatflix1',
 };
 
 export const JSON_FILE_PATH = {
-  GROUP_MATFLIX: '/home/nishaltaylor/Downloads/gruppen_202312271444.json',
+  GROUP_MATFLIX: '/home/nishaltaylor/Downloads/gruppen_202402271354.json',
   CATEGORIES_MATFLIX:
-    '/home/nishaltaylor/Downloads/kategorien_202312271445.json',
-  NEWS_MATFLIX: '/home/nishaltaylor/Downloads/nachrichten_202401101829.json',
+    '/home/nishaltaylor/Downloads/kategorien_202402271354.json',
+  NEWS_MATFLIX: '/home/nishaltaylor/Downloads/nachrichten_202402271350.json',
+  //NEWS_MATFLIX: 'src/test.json',
   NEWS_CATEGORIES_MATFLIX:
     '/home/nishaltaylor/Downloads/nachrichten_x_kategorien_202312271444.json',
 };
