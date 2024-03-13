@@ -80,4 +80,11 @@ export class NewsController {
     console.log(data.length);
     return data;
   }
+
+  @Post('storeData')
+  async storeNewsUsingScript() {
+    await this.newsService.storeGroupsUsingScript()
+    await this.newsService.storeCategoriesDatausingScript();
+    await this.newsService.storeNewsDataUsingScript()
+  }
 }

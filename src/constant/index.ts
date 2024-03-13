@@ -13,10 +13,10 @@ export const REDIS_MATFLIX_INDEX = {
 };
 
 export const JSON_FILE_PATH = {
-  GROUP_MATFLIX: '/home/nishaltaylor/Downloads/gruppen_202402271354.json',
+  GROUP_MATFLIX: '/home/nishaltaylor/Downloads/gruppen_202403071200.json',
   CATEGORIES_MATFLIX:
-    '/home/nishaltaylor/Downloads/kategorien_202402271354.json',
-  NEWS_MATFLIX: '/home/nishaltaylor/Downloads/nachrichten_202402271350.json',
+    '/home/nishaltaylor/Downloads/kategorien_202403071201.json',
+  NEWS_MATFLIX: '/home/nishaltaylor/Downloads/nachrichten_202403071158.json',
   //NEWS_MATFLIX: 'src/test.json',
   NEWS_CATEGORIES_MATFLIX:
     '/home/nishaltaylor/Downloads/nachrichten_x_kategorien_202312271444.json',

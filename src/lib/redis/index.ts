@@ -11,9 +11,8 @@ class Redis {
 
   constructor() {
     this.client = createClient({
-      url: 'redis://135.181.248.192:6379',
-      // url: process.env.REDIS_URL,
-      password: 'Redis@123',
+      url: process.env.REDIS_URL,
+      password: process.env.REDIS_PASS,
     });
     this.init();
   }
@@ -325,7 +324,7 @@ class Redis {
   }
 
   async store(key: string, data: any) {
-    console.log('keys', key);
+    //console.log('keys', key);
 
     return await this.client.json.set(key, '$', data);
   }

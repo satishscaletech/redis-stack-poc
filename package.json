@@ -6,7 +6,8 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "build": "nest build",
+    "build": "nest build && npm run copy:assets",
+    "copy:assets": "cp -r src/data dist/data",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
@@ -23,13 +24,16 @@
     "@nestjs/common": "^10.0.0",
     "@nestjs/core": "^10.0.0",
     "@nestjs/platform-express": "^10.0.0",
+    "@nestjs/schedule": "^4.0.1",
     "dotenv": "^16.4.1",
     "lodash": "^4.17.21",
     "moment": "^2.30.1",
+    "npm": "^10.1.0",
     "redis": "^4.6.12",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.1",
-    "stream-json": "^1.8.0"
+    "stream-json": "^1.8.0",
+    "zlib": "^1.0.5"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",
