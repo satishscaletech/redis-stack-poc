@@ -11,4 +11,10 @@ export class ImportNewsController {
         await this.importNewsService.importGroups()
         await this.importNewsService.importNews();
     }
+
+    @Get('clickhouse')
+    async importDataByclickHouse() {
+        const r = await this.importNewsService.importDataByClickHouse()
+        return r
+    }
 }

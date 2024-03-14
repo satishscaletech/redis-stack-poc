@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import * as fs from 'fs'
 import { exec } from 'child_process';
+import { ClickHouse } from 'clickhouse';
 @Injectable()
 export class ImportDataService {
     public async importNews() {
@@ -69,6 +70,40 @@ export class ImportDataService {
             console.log("error while import group Data ============>", error);
         }
     }
+
+
+    public async importDataByClickHouse() {
+
+        const clickhouse = new ClickHouse({
+            url: 'http://localhost',
+            port: 8123,
+            debug: false,
+            // isUseGzip: false,
+            //  trimQuery: false,
+            //  usePost: false,
+            format: "json", // "json" || "csv" || "tsv"
+            // raw: false,
+            config: {
+                database: null,
+            },
+        });
+        clickhouse.query(`SELECT * FROM
+   mysql(
+    'host:port',
+    'DBNAME,
+    'gruppen',
+    'USER',
+    'DBPASSWORD'
+)
+INTO OUTFILE "/home/nishaltaylor/workspace/projects/redis-stack-poc/redis-stack-poc/src/data/group.json"`).exec(function (err, rows) {
+            console.log(err, "err==============>")
+            console.log(rows, "rows=============================>>>>>>>>>>>>>>")
+        });
+        console.log(clickhouse)
+
+    }
+
+
 }
 
 
