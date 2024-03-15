@@ -6,29 +6,32 @@ import { ClickHouse } from 'clickhouse';
 export class ImportDataService {
   public async exportTableData() {
     const res = await Promise.all([
-      this.importNews(),
-      this.importKategorien(),
-      this.importGroups(),
+      await this.importNews(),
+      await this.importKategorien(),
+      await this.importGroups(),
     ]);
 
     return res;
   }
 
   public async importNews() {
-    console.log('importing News');
+    console.log(
+      'importing News',
+      fs.existsSync(`${process.cwd()}/src/data/news.json`),
+    );
     try {
       let isSuccess = true;
-      if (fs.existsSync('dist/data/news.json')) {
-        fs.unlinkSync('dist/data/news.json');
+      if (fs.existsSync(`${process.cwd()}/src/data/news.json`)) {
+        fs.unlinkSync(`${process.cwd()}/src/data/news.json`);
       }
-      if (fs.existsSync('dist/data/news.json.gz')) {
-        fs.unlinkSync('dist/data/news.json.gz');
+      if (fs.existsSync('../../data/news.json.gz')) {
+        fs.unlinkSync('../../data/news.json.gz');
       }
       var script = exec(
         'sh src/data/export-news-json.sh',
         (error, stdout, stderr) => {
           console.log('stdout=====>', stdout);
-          console.log('stderr======', stderr);
+          console.log('stderr news ======', stderr);
           if (!stderr) {
             exec('gzip -k src/data/news.json');
           } else {
@@ -47,21 +50,21 @@ export class ImportDataService {
     console.log('importing Kategorie');
     try {
       let isSuccess = true;
-      if (fs.existsSync('dist/data/kategorien.json')) {
-        fs.unlinkSync('dist/data/kategorien.json');
+      if (fs.existsSync('src/data/kategorien.json')) {
+        fs.unlinkSync('src/data/kategorien.json');
       }
-      if (fs.existsSync('dist/data/kategorien.json.gz')) {
-        fs.unlinkSync('dist/data/kategorien.json.gz');
+      if (fs.existsSync('src/data/kategorien.json.gz')) {
+        fs.unlinkSync('src/data/kategorien.json.gz');
       }
       var script = exec(
         'sh src/data/export-kategorien-json.sh',
         (error, stdout, stderr) => {
           console.log('stdout=====>', stdout);
-          console.log('stderr======', stderr);
+          console.log('stderr kategorien: ', stderr);
           if (!stderr) {
             exec('gzip -k src/data/kategorien.json');
           } else {
-            let isSuccess = false;
+            isSuccess = false;
           }
         },
       );
@@ -76,17 +79,17 @@ export class ImportDataService {
     console.log('importing Groups');
     try {
       let isSuccess = true;
-      if (fs.existsSync('dist/data/group.json')) {
-        fs.unlinkSync('dist/data/group.json');
+      if (fs.existsSync('src/data/group.json')) {
+        fs.unlinkSync('src/data/group.json');
       }
-      if (fs.existsSync('dist/data/group.json.gz')) {
-        fs.unlinkSync('dist/data/group.json.gz');
+      if (fs.existsSync('src/data/group.json.gz')) {
+        fs.unlinkSync('src/data/group.json.gz');
       }
       var script = exec(
         'sh src/data/export-gruppen-json.sh',
         (error, stdout, stderr) => {
           console.log('stdout=====>', stdout);
-          console.log('stderr======', stderr);
+          console.log('stderr group: ', stderr);
           if (!stderr) {
             exec('gzip -k src/data/group.json');
           } else {

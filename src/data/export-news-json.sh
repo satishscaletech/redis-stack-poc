@@ -1,12 +1,13 @@
-./clickhouse local -q "SELECT * FROM
+rm nachrichten.json
+
+clickhouse local -q "SELECT * FROM
   mysql(
     'host:port',
-    'DBNAME,
+    'DBNAME',
     'nachrichten',
     'USER',
     'DBPASS'
 )
-INTO OUTFILE 'news.json'"
+INTO OUTFILE 'nachrichten.json'"
 
-
-
+gzip -fk nachrichten.json

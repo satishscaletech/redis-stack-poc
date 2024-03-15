@@ -1,7 +1,7 @@
 import { Controller, Get } from '@nestjs/common';
 import { ImportDataService } from './importData.service';
 
-@Controller('importData')
+@Controller('import-data')
 export class ImportNewsController {
   constructor(private readonly importNewsService: ImportDataService) {}
 

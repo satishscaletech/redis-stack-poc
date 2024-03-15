@@ -5,7 +5,7 @@ import {
   RediSearchSchema,
 } from 'redis';
 import 'dotenv/config';
-import { REDIS_MATFLIX_INDEX } from 'src/constant';
+import { REDIS_MATFLIX_INDEX } from '../../constant';
 class Redis {
   private client: RedisClientType;
 

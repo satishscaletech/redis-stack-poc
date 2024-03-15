@@ -1,13 +1,13 @@
-rm gruppen.json
+rm kategorien.json
 
 clickhouse local -q "SELECT * FROM
    mysql(
     'host:port',
     'DBNAME',
-    'gruppen',
+    'kategorien',
     'USER',
     'DBPASS'
 )
-INTO OUTFILE 'gruppen.json'"
+INTO OUTFILE 'kategorien.json'"
 
-gzip -fk gruppen.json 
+gzip -fk kategorien.json

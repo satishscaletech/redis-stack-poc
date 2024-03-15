@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Query, UseInterceptors } from '@nestjs/common';
 import { NewsService } from './news.service';
-import { SuccessResponse, TransformInterceptor } from 'src/helper/transform';
-import { PaginationInterface } from 'src/helper';
+import { SuccessResponse, TransformInterceptor } from '../../helper/transform';
+import { PaginationInterface } from '../../helper';
 import { newsResponseDto } from './dto/news.res.dto';
 
 @Controller('news')
@@ -83,8 +83,8 @@ export class NewsController {
 
   @Post('storeData')
   async storeNewsUsingScript() {
-    await this.newsService.storeGroupsUsingScript()
+    await this.newsService.storeGroupsUsingScript();
     await this.newsService.storeCategoriesDatausingScript();
-    await this.newsService.storeNewsDataUsingScript()
+    await this.newsService.storeNewsDataUsingScript();
   }
 }
