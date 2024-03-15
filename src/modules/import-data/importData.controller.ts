@@ -3,18 +3,16 @@ import { ImportDataService } from './importData.service';
 
 @Controller('importData')
 export class ImportNewsController {
-    constructor(private readonly importNewsService: ImportDataService) { }
+  constructor(private readonly importNewsService: ImportDataService) {}
 
-    @Get()
-    async importData() {
-        await this.importNewsService.importKategorien();
-        await this.importNewsService.importGroups()
-        await this.importNewsService.importNews();
-    }
+  @Get()
+  async importData() {
+    const data = await this.importNewsService.exportTableData();
+  }
 
-    @Get('clickhouse')
-    async importDataByclickHouse() {
-        const r = await this.importNewsService.importDataByClickHouse()
-        return r
-    }
+  @Get('clickhouse')
+  async importDataByclickHouse() {
+    const res = await this.importNewsService.importDataByClickHouse();
+    return res;
+  }
 }
