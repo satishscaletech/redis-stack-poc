@@ -12,6 +12,12 @@ export const REDIS_MATFLIX_INDEX = {
   NEWS_CATEGORIES_MATFLIX: 'newsCategoriesMatflix1',
 };
 
+export const REDIS_EXPORT_KEY ={
+  NEWS_EXPORTED_AT:'newsExportedAt',
+  KATEGORIEN_EXPORTED_AT:'kategorienExportedAt',
+  GROUPS_EXPORTED_AT:'groupsExportedAt'
+}
+
 export const JSON_FILE_PATH = {
   GROUP_MATFLIX: '/home/nishaltaylor/Downloads/gruppen_202403071200.json',
   CATEGORIES_MATFLIX:
