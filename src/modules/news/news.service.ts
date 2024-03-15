@@ -11,6 +11,7 @@ import {
   REDIS_MATFLIX_INDEX,
   FREEMIUM,
   TOTAL_CATEGORY,
+  REDIS_EXPORT_KEY,
 } from '../../constant';
 import { newsResponseDto } from './dto/news.res.dto';
 import * as moment from 'moment';
@@ -770,156 +771,174 @@ export class NewsService {
     });
   }
   public async storeNewsDataUsingScript() {
-    const pipeline = chain([
-      fs.createReadStream(
-        "/home/nishaltaylor/workspace/projects/redis-stack-poc/redis-stack-poc/src/data/news.json.gz"
-      ),
-      zlib.createGunzip(),
-      parser(),
-      pick({ filter: "data" }),
-      ignore({ filter: /\b_meta\b/i }),
-      streamValues(),
-      (data) => {
-        const value = data.value;
-        console.log("value", value);
-        return value;
-      },
-    ]);
 
-    let counter = 0;
-    pipeline.on('data', async (chunk: any) => {
-      const news = chunk;
-      news.id = news.id;
-      news.datum = news.datum ? new Date(news.datum).getTime() : null;
-      news.sprache = news.sprache ?? null;
-      news.source_code = news.source_code ?? null;
-      news.grusel = news.grusel
-        ? news.grusel
-          .trim()
-          .split(' ')
-          .filter((d: string) => d)
-        : [];
-      //news.grusel = news.grusel;
-      news.bild = news.bild ?? null;
-      news.bild_info = news.bild_info ?? null;
-      news.titel = news.titel ?? null;
-      news.einleitung = news.einleitung ?? null;
-      news.inhalt = news.inhalt ?? null;
-      news.html = news.html ?? null;
-      news.autor = news.auto ?? null;
-      news.quelle = news.quelle ?? null;
-      news.externe_id = news.externe_id;
-      news.sicherungszeit = news.sicherungszeit ?? null;
-      news.tags =
-        news.grusel.length > 0
-          ? JSON.stringify(await this.storeTag(news.grusel))
-          : 'false';
-      news.categories =
-        news.grusel.length > 0
-          ? await this.storeCategoriesIDs(news.grusel)
+    const lastExportedDataDate = await redis.getKey(REDIS_EXPORT_KEY.NEWS_EXPORTED_AT)
+    if (lastExportedDataDate) {
+      const pipeline = chain([
+        fs.createReadStream(
+          process.env.KATEGORIEN_ZIP_PATH
+        ),
+        zlib.createGunzip(),
+        parser(),
+        pick({ filter: "data" }),
+        ignore({ filter: /\b_meta\b/i }),
+        streamValues(),
+        (data) => {
+          const value = data.value;
+          console.log("value", value);
+          return value;
+        },
+      ]);
+
+      let counter = 0;
+      pipeline.on('data', async (chunk: any) => {
+        const news = chunk;
+        news.id = news.id;
+        news.datum = news.datum ? new Date(news.datum).getTime() : null;
+        news.sprache = news.sprache ?? null;
+        news.source_code = news.source_code ?? null;
+        news.grusel = news.grusel
+          ? news.grusel
+            .trim()
+            .split(' ')
+            .filter((d: string) => d)
           : [];
-      const res = await redis.store(
-        `${REDIS_MATFLIX_INDEX.NEWS_MATFLIX}:${news.id}`,
-        news,
-      );
-      console.info('Redis news response: ', res);
-    });
+        //news.grusel = news.grusel;
+        news.bild = news.bild ?? null;
+        news.bild_info = news.bild_info ?? null;
+        news.titel = news.titel ?? null;
+        news.einleitung = news.einleitung ?? null;
+        news.inhalt = news.inhalt ?? null;
+        news.html = news.html ?? null;
+        news.autor = news.auto ?? null;
+        news.quelle = news.quelle ?? null;
+        news.externe_id = news.externe_id;
+        news.sicherungszeit = news.sicherungszeit ?? null;
+        news.tags =
+          news.grusel.length > 0
+            ? JSON.stringify(await this.storeTag(news.grusel))
+            : 'false';
+        news.categories =
+          news.grusel.length > 0
+            ? await this.storeCategoriesIDs(news.grusel)
+            : [];
+        const res = await redis.store(
+          `${REDIS_MATFLIX_INDEX.NEWS_MATFLIX}:${news.id}`,
+          news,
+        );
+        console.info('Redis news response: ', res);
+      });
+      pipeline.on("end", () => console.log(`Total news count: ${counter}.`));
+    } else {
+      return;
+    }
 
-    pipeline.on("end", () => console.log(`Total news count: ${counter}.`));
 
   }
 
   public async storeCategoriesDatausingScript() {
-    const pipeline = chain([
-      fs.createReadStream(
-        "/home/nishaltaylor/workspace/projects/redis-stack-poc/redis-stack-poc/src/data/kategorien.json.gz"
-      ),
-      zlib.createGunzip(),
-      parser(),
-      pick({ filter: "data" }),
-      ignore({ filter: /\b_meta\b/i }),
-      streamValues(),
-      (data) => {
-        const value = data.value;
-        console.log("value", value);
-        return value;
-      },
-    ]);
-    pipeline.on('data', async (chunk: any) => {
-      const categories = chunk;
+    const lastExportedDataDate = await redis.getKey(REDIS_EXPORT_KEY.KATEGORIEN_EXPORTED_AT)
+    if (lastExportedDataDate) {
+      const pipeline = chain([
+        fs.createReadStream(
+          process.env.KATEGORIEN_ZIP_PATH
+        ),
+        zlib.createGunzip(),
+        parser(),
+        pick({ filter: "data" }),
+        ignore({ filter: /\b_meta\b/i }),
+        streamValues(),
+        (data) => {
+          const value = data.value;
+          console.log("value", value);
+          return value;
+        },
+      ]);
+      pipeline.on('data', async (chunk: any) => {
+        const categories = chunk;
 
-      categories.kategorie_id = categories.kategorie_id ?? 0;
-      categories.gruppen_id = categories.gruppen_id ?? 0;
-      categories.gruppe = categories.gruppe ?? '';
-      categories.kategorie = categories.kategorie ?? '';
-      categories.sprache = categories.sprache ?? '';
-      categories.quelle = categories.quelle ?? '';
-      categories.fid = categories.fid ?? 0;
-      categories.grusel = categories.grusel
-        ? categories.grusel.split(' ')
-        : [''];
-      categories.sichtbar = categories.sichtbar ?? 0;
-      categories.sicherungszeit = categories.sicherungszeit ?? '';
-      categories.kategorie_eng = categories.kategorie_eng ?? '';
-      categories.gruppe_eng = categories.gruppe_eng ?? '';
-      categories.is_news_delete = categories.is_news_delete ?? 0;
+        categories.kategorie_id = categories.kategorie_id ?? 0;
+        categories.gruppen_id = categories.gruppen_id ?? 0;
+        categories.gruppe = categories.gruppe ?? '';
+        categories.kategorie = categories.kategorie ?? '';
+        categories.sprache = categories.sprache ?? '';
+        categories.quelle = categories.quelle ?? '';
+        categories.fid = categories.fid ?? 0;
+        categories.grusel = categories.grusel
+          ? categories.grusel.split(' ')
+          : [''];
+        categories.sichtbar = categories.sichtbar ?? 0;
+        categories.sicherungszeit = categories.sicherungszeit ?? '';
+        categories.kategorie_eng = categories.kategorie_eng ?? '';
+        categories.gruppe_eng = categories.gruppe_eng ?? '';
+        categories.is_news_delete = categories.is_news_delete ?? 0;
 
-      const res = await redis.store(
-        `${REDIS_MATFLIX_INDEX.CATEGORIES_MATFLIX}:${categories.kategorie_id}`,
-        categories,
-      );
-      console.log('Redis categories response: ', res);
-    });
+        const res = await redis.store(
+          `${REDIS_MATFLIX_INDEX.CATEGORIES_MATFLIX}:${categories.kategorie_id}`,
+          categories,
+        );
+        console.log('Redis categories response: ', res);
+      });
 
-    pipeline.on('end', async () => {
-      console.log('finished reading categories');
-    });
+      pipeline.on('end', async () => {
+        console.log('finished reading categories');
+      });
+
+    } else {
+      return;
+    }
 
   }
 
   public async storeGroupsUsingScript() {
-    const pipeline = chain([
-      fs.createReadStream(
-        "/home/nishaltaylor/workspace/projects/redis-stack-poc/redis-stack-poc/src/data/group.json.gz"
-      ),
-      zlib.createGunzip(),
-      parser(),
-      pick({ filter: "data" }),
-      ignore({ filter: /\b_meta\b/i }),
-      streamValues(),
-      (data) => {
-        const value = data.value;
-        console.log("value", value);
-        return value;
-      },
-    ]);
+    const lastExportedDataDate = await redis.getKey(REDIS_EXPORT_KEY.GROUPS_EXPORTED_AT)
+    if (lastExportedDataDate) {
+      const pipeline = chain([
+        fs.createReadStream(
+          process.env.GROUP_ZIP_PATH
+        ),
+        zlib.createGunzip(),
+        parser(),
+        pick({ filter: "data" }),
+        ignore({ filter: /\b_meta\b/i }),
+        streamValues(),
+        (data) => {
+          const value = data.value;
+          console.log("value", value);
+          return value;
+        },
+      ]);
 
-    pipeline.on('data', async (chunk: any) => {
-      const group = chunk;
+      pipeline.on('data', async (chunk: any) => {
+        const group = chunk;
 
-      group.gruppen_id = group.gruppen_id ?? '';
-      group.eltern_id = group.eltern_id ?? '';
-      group.gruppe = group.gruppe ?? '';
-      group.gruppe_eng = group.gruppe_eng ?? '';
-      group.sortidx = group.sortidx ?? '';
-      group.sichtbar = group.sichtbar ?? '';
-      group.bilddatei = group.bilddatei ?? '';
-      group.filter_nachrichten = group.filter_nachrichten ?? '';
-      group.filter_kurse = group.filter_kurse ?? '';
-      group.sicherungszeit = group.sicherungszeit ?? '';
-      group.is_active = group.is_active ?? '';
-      group.is_inactive = group.is_inactive ?? '';
+        group.gruppen_id = group.gruppen_id ?? '';
+        group.eltern_id = group.eltern_id ?? '';
+        group.gruppe = group.gruppe ?? '';
+        group.gruppe_eng = group.gruppe_eng ?? '';
+        group.sortidx = group.sortidx ?? '';
+        group.sichtbar = group.sichtbar ?? '';
+        group.bilddatei = group.bilddatei ?? '';
+        group.filter_nachrichten = group.filter_nachrichten ?? '';
+        group.filter_kurse = group.filter_kurse ?? '';
+        group.sicherungszeit = group.sicherungszeit ?? '';
+        group.is_active = group.is_active ?? '';
+        group.is_inactive = group.is_inactive ?? '';
 
-      const res = await redis.store(
-        `${REDIS_MATFLIX_INDEX.GROUP_MATFLIX}:${group.gruppen_id}`,
-        group,
-      );
-      console.log('Redis group response: ', res);
-    });
+        const res = await redis.store(
+          `${REDIS_MATFLIX_INDEX.GROUP_MATFLIX}:${group.gruppen_id}`,
+          group,
+        );
+        console.log('Redis group response: ', res);
+      });
 
-    pipeline.on('end', async () => {
-      console.info('finished reading group');
-    });
+      pipeline.on('end', async () => {
+        console.info('finished reading group');
+      });
+    } else {
+      return;
+    }
+
   }
 
 }
