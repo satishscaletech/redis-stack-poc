@@ -334,6 +334,14 @@ class Redis {
 
     return await this.client.ft.search(idxKey, query, option);
   }
+
+  public async setKey(key: string, value: any) {
+    return await this.client.set(key, value);
+  }
+
+  public async getKey(key: string) {
+    return await this.client.get(key);
+  }
 }
 
 const redis = new Redis();

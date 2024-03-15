@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import * as fs from 'fs';
 import { exec } from 'child_process';
 import { ClickHouse } from 'clickhouse';
+import redis from 'lib/redis';
 @Injectable()
 export class ImportDataService {
   public async exportTableData() {
@@ -20,10 +20,11 @@ export class ImportDataService {
       let isSuccess = true;
       var script = exec(
         'sh src/data/export-news-json.sh',
-        (error, stdout, stderr) => {
+        async (error, stdout, stderr) => {
           console.log('stdout=====>', stdout);
           console.log('stderr news ======', stderr);
           if (!stderr) {
+            await redis.setKey('exportedAt', Date.now());
           } else {
             isSuccess = false;
           }
@@ -42,10 +43,11 @@ export class ImportDataService {
       let isSuccess = true;
       var script = exec(
         'sh src/data/export-kategorien-json.sh',
-        (error, stdout, stderr) => {
+        async (error, stdout, stderr) => {
           console.log('stdout=====>', stdout);
           console.log('stderr kategorien: ', stderr);
           if (!stderr) {
+            await redis.setKey('exportedAt', Date.now());
           } else {
             isSuccess = false;
           }
@@ -65,10 +67,11 @@ export class ImportDataService {
 
       var script = exec(
         'sh src/data/export-gruppen-json.sh',
-        (error, stdout, stderr) => {
+        async (error, stdout, stderr) => {
           console.log('stdout=====>', stdout);
           console.log('stderr group: ', stderr);
           if (!stderr) {
+            await redis.setKey('exportedAt', Date.now());
           } else {
             isSuccess = false;
           }
