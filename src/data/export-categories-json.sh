@@ -1,6 +1,6 @@
 rm kategorien.json
 
-clickhouse local -q "SELECT * FROM
+./clickhouse local -q "SELECT * FROM
    mysql(
     'host:port',
     'DBNAME',
