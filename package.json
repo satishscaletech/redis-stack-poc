@@ -26,6 +26,7 @@
     "@nestjs/platform-express": "^10.0.0",
     "@nestjs/schedule": "^4.0.1",
     "clickhouse": "^2.6.0",
+    "@nestjs/swagger": "^7.1.17",
     "dotenv": "^16.4.1",
     "lodash": "^4.17.21",
     "moment": "^2.30.1",
