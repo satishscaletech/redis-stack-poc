@@ -81,10 +81,17 @@ export class NewsController {
     return data;
   }
 
-  @Post('storeData')
+  @Post('store-group-category')
   async storeNewsUsingScript() {
-    await this.newsService.storeGroupsUsingScript();
-    await this.newsService.storeCategoriesDatausingScript();
-    await this.newsService.storeNewsDataUsingScript();
+    Promise.all([
+      await this.newsService.storeGroupsUsingScript(),
+      await this.newsService.storeCategoriesDatausingScript()
+    ])
+
+  }
+
+  @Post('store-news')
+  async storeNewsDataUsingScript() {
+    await this.newsService.storeNewsDataUsingScript()
   }
 }
