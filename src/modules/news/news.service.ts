@@ -771,12 +771,11 @@ export class NewsService {
     });
   }
   public async storeNewsDataUsingScript() {
-
     const lastExportedDataDate = await redis.getKey(REDIS_EXPORT_KEY.NEWS_EXPORTED_AT)
     if (lastExportedDataDate) {
       const pipeline = chain([
         fs.createReadStream(
-          process.env.KATEGORIEN_ZIP_PATH
+          `${process.cwd()}/nachrichten.json.gz`
         ),
         zlib.createGunzip(),
         parser(),
@@ -841,7 +840,7 @@ export class NewsService {
     if (lastExportedDataDate) {
       const pipeline = chain([
         fs.createReadStream(
-          process.env.KATEGORIEN_ZIP_PATH
+          `${process.cwd()}/kategorien.json.gz`
         ),
         zlib.createGunzip(),
         parser(),
@@ -895,7 +894,7 @@ export class NewsService {
     if (lastExportedDataDate) {
       const pipeline = chain([
         fs.createReadStream(
-          process.env.GROUP_ZIP_PATH
+          `${process.cwd()}/gruppen.json.gz`
         ),
         zlib.createGunzip(),
         parser(),
