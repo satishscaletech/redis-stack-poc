@@ -788,7 +788,7 @@ export class NewsService {
 
       let counter = 0;
       pipeline.on('data', async (chunk: any) => {
-        const news = chunk;
+        const news = { ...chunk };
         news.id = news.id;
         news.datum = news.datum ? new Date(news.datum).getTime() : null;
         news.sprache = news.sprache ?? null;
