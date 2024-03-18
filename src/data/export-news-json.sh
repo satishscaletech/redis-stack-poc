@@ -1,9 +1,9 @@
-rm nachrichten.json
+rm -rf nachrichten.json
 
 ./clickhouse local -q "SELECT * FROM
   mysql(
     'host:port',
-    'DBNAME',
+    'matx-dev',
     'nachrichten',
     'USER',
     'DBPASS'

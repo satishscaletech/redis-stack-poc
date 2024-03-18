@@ -1,9 +1,9 @@
-rm kategorien.json
+rm -rf kategorien.json
 
 ./clickhouse local -q "SELECT * FROM
    mysql(
     'host:port',
-    'DBNAME',
+    'matx-dev',
     'kategorien',
     'USER',
     'DBPASS'

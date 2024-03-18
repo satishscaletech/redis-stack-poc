@@ -1,9 +1,9 @@
-rm gruppen.json
+rm -rf gruppen.json
 
 ./clickhouse local -q "SELECT * FROM
    mysql(
     'host:port',
-    'DBNAME',
+    'matx-dev',
     'gruppen',
     'USER',
     'DBPASS'
