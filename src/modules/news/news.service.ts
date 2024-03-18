@@ -12,6 +12,7 @@ import {
   FREEMIUM,
   TOTAL_CATEGORY,
   REDIS_EXPORT_KEY,
+  REDIS_IMPORT_KEY,
 } from '../../constant';
 import { newsResponseDto } from './dto/news.res.dto';
 import * as moment from 'moment';
@@ -825,7 +826,11 @@ export class NewsService {
         console.info('Redis news response: ', res);
         ++counter;
       });
-      pipeline.on('end', () => console.log(`Total news count: ${counter}.`));
+      pipeline.on("end", async () => {
+        console.log(`Total news count: ${counter}.`)
+        return await redis.setKey(REDIS_IMPORT_KEY.NEWS_IMPORTED_AT, Date.now());
+      }
+      );
     } else {
       return;
     }
@@ -875,6 +880,7 @@ export class NewsService {
 
       pipeline.on('end', async () => {
         console.log('finished reading categories');
+        return await redis.setKey(REDIS_IMPORT_KEY.KATEGORIEN_IMPORTED_AT, Date.now());
       });
     } else {
       return;
@@ -923,6 +929,7 @@ export class NewsService {
 
       pipeline.on('end', async () => {
         console.info('finished reading group');
+        return await redis.setKey(REDIS_IMPORT_KEY.NEWS_IMPORTED_AT, Date.now());
       });
     } else {
       return;

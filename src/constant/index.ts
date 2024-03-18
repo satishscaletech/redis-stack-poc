@@ -18,6 +18,13 @@ export const REDIS_EXPORT_KEY ={
   GROUPS_EXPORTED_AT:'groupsExportedAt'
 }
 
+export const REDIS_IMPORT_KEY ={
+  NEWS_IMPORTED_AT:'newsImportedAt',
+  KATEGORIEN_IMPORTED_AT: 'kategorienImportedDAt',
+  GROUPS_IMPORTED_AT: 'groupsImportedAt'
+
+}
+
 export const JSON_FILE_PATH = {
   GROUP_MATFLIX: '/home/nishaltaylor/Downloads/gruppen_202403071200.json',
   CATEGORIES_MATFLIX:
