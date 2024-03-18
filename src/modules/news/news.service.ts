@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
 import * as fs from 'fs';
-import * as zlib from 'zlib'
+import * as zlib from 'zlib';
 import { difference, intersection } from 'lodash';
 import redis from '../../lib/redis';
 import * as StreamArray from 'stream-json/streamers/StreamArray';
@@ -17,11 +17,11 @@ import { newsResponseDto } from './dto/news.res.dto';
 import * as moment from 'moment';
 import { tagResponseDto } from './dto/tag.res.dto';
 
-import { chain } from "stream-chain";
-import { parser } from "stream-json";
-import { pick } from "stream-json/filters/Pick";
-import { ignore } from "stream-json/filters/Ignore";
-import { streamValues } from "stream-json/streamers/StreamValues";
+import { chain } from 'stream-chain';
+import { parser } from 'stream-json';
+import { pick } from 'stream-json/filters/Pick';
+import { ignore } from 'stream-json/filters/Ignore';
+import { streamValues } from 'stream-json/streamers/StreamValues';
 
 @Injectable()
 export class NewsService {
@@ -38,9 +38,9 @@ export class NewsService {
       news.source_code = news.source_code ?? null;
       news.grusel = news.grusel
         ? news.grusel
-          .trim()
-          .split(' ')
-          .filter((d: string) => d)
+            .trim()
+            .split(' ')
+            .filter((d: string) => d)
         : [];
       //news.grusel = news.grusel;
       news.bild = news.bild ?? null;
@@ -151,7 +151,6 @@ export class NewsService {
       console.log(error);
     }
   }
-
 
   public async storeCategoriesIDs(grusel) {
     try {
@@ -771,21 +770,19 @@ export class NewsService {
     });
   }
   public async storeNewsDataUsingScript() {
-    const lastExportedDataDate = await redis.getKey(REDIS_EXPORT_KEY.NEWS_EXPORTED_AT)
+    const lastExportedDataDate = await redis.getKey(
+      REDIS_EXPORT_KEY.NEWS_EXPORTED_AT,
+    );
     if (lastExportedDataDate) {
       const pipeline = chain([
-        fs.createReadStream(
-          `${process.cwd()}/nachrichten.json.gz`
-        ),
+        fs.createReadStream(`${process.cwd()}/nachrichten.json.gz`),
         zlib.createGunzip(),
         parser(),
-        pick({ filter: "data" }),
+        pick({ filter: 'data' }),
         ignore({ filter: /\b_meta\b/i }),
         streamValues(),
         (data) => {
-          const value = data.value;
-          console.log("value", value);
-          return value;
+          return data?.value;
         },
       ]);
 
@@ -798,9 +795,9 @@ export class NewsService {
         news.source_code = news.source_code ?? null;
         news.grusel = news.grusel
           ? news.grusel
-            .trim()
-            .split(' ')
-            .filter((d: string) => d)
+              .trim()
+              .split(' ')
+              .filter((d: string) => d)
           : [];
         //news.grusel = news.grusel;
         news.bild = news.bild ?? null;
@@ -826,31 +823,28 @@ export class NewsService {
           news,
         );
         console.info('Redis news response: ', res);
+        ++counter;
       });
-      pipeline.on("end", () => console.log(`Total news count: ${counter}.`));
+      pipeline.on('end', () => console.log(`Total news count: ${counter}.`));
     } else {
       return;
     }
-
-
   }
 
   public async storeCategoriesDatausingScript() {
-    const lastExportedDataDate = await redis.getKey(REDIS_EXPORT_KEY.KATEGORIEN_EXPORTED_AT)
+    const lastExportedDataDate = await redis.getKey(
+      REDIS_EXPORT_KEY.KATEGORIEN_EXPORTED_AT,
+    );
     if (lastExportedDataDate) {
       const pipeline = chain([
-        fs.createReadStream(
-          `${process.cwd()}/kategorien.json.gz`
-        ),
+        fs.createReadStream(`${process.cwd()}/kategorien.json.gz`),
         zlib.createGunzip(),
         parser(),
-        pick({ filter: "data" }),
+        pick({ filter: 'data' }),
         ignore({ filter: /\b_meta\b/i }),
         streamValues(),
         (data) => {
-          const value = data.value;
-          console.log("value", value);
-          return value;
+          return data?.value;
         },
       ]);
       pipeline.on('data', async (chunk: any) => {
@@ -882,29 +876,25 @@ export class NewsService {
       pipeline.on('end', async () => {
         console.log('finished reading categories');
       });
-
     } else {
       return;
     }
-
   }
 
   public async storeGroupsUsingScript() {
-    const lastExportedDataDate = await redis.getKey(REDIS_EXPORT_KEY.GROUPS_EXPORTED_AT)
+    const lastExportedDataDate = await redis.getKey(
+      REDIS_EXPORT_KEY.GROUPS_EXPORTED_AT,
+    );
     if (lastExportedDataDate) {
       const pipeline = chain([
-        fs.createReadStream(
-          `${process.cwd()}/gruppen.json.gz`
-        ),
+        fs.createReadStream(`${process.cwd()}/gruppen.json.gz`),
         zlib.createGunzip(),
         parser(),
-        pick({ filter: "data" }),
+        pick({ filter: 'data' }),
         ignore({ filter: /\b_meta\b/i }),
         streamValues(),
         (data) => {
-          const value = data.value;
-          console.log("value", value);
-          return value;
+          return data?.value;
         },
       ]);
 
@@ -937,7 +927,5 @@ export class NewsService {
     } else {
       return;
     }
-
   }
-
 }
